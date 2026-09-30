@@ -5,7 +5,8 @@ on:
   pull_request:
 
 jobs:
-  build:
+  linux:
+    name: Core, UI and Linux host
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,11 +15,27 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Restore
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --no-restore --configuration Release
+      - name: Build Linux host
+        run: dotnet build src/Imbas.Linux --configuration Release
 
       - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: dotnet test tests/Imbas.Core.Tests --configuration Release --verbosity normal
+
+  maui:
+    name: MAUI app (Windows, Android)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install MAUI workloads
+        run: dotnet workload install maui-windows maui-android
+
+      - name: Build for Windows
+        run: dotnet build src/Imbas.Maui --configuration Release --framework net10.0-windows10.0.19041.0
+
+      - name: Build for Android
+        run: dotnet build src/Imbas.Maui --configuration Release --framework net10.0-android

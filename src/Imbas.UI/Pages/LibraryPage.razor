@@ -1,0 +1,24 @@
+@page "/"
+@inject Library Library
+
+<h1>Library</h1>
+
+@if (Library.Count == 0)
+{
+    <p class="empty">Your library is empty.</p>
+}
+else
+{
+    <ul class="books">
+        @foreach (var book in Library.Books.OrderBy(b => b.Title, StringComparer.CurrentCultureIgnoreCase))
+        {
+            <li>
+                <span class="title">@book.Title</span>
+                @if (book.Authors.Count > 0)
+                {
+                    <span class="authors">@string.Join(", ", book.Authors)</span>
+                }
+            </li>
+        }
+    </ul>
+}
