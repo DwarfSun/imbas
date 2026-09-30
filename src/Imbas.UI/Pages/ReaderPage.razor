@@ -1,0 +1,186 @@
+@page "/read"
+@implements IAsyncDisposable
+@inject ReaderService Reader
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+@if (Reader.Session is not { } session)
+{
+    <p class="empty">No book is open. <a href="">Back to the library</a></p>
+}
+else
+{
+    <div class="reader @(_showContents ? "contents-open" : "")">
+        <nav class="contents" aria-label="Contents">
+            <header>
+                <h1>@session.Book.Title</h1>
+                @if (session.Book.Authors.Count > 0)
+                {
+                    <p class="authors">@string.Join(", ", session.Book.Authors)</p>
+                }
+            </header>
+
+            @if (session.Book.TableOfContents.Count > 0)
+            {
+                @TocList(session.Book.TableOfContents)
+            }
+            else
+            {
+                <ol class="toc">
+                    @foreach (var chapter in session.Book.Chapters)
+                    {
+                        <li>@TocLink(chapter.DisplayTitle, chapter.Index, null)</li>
+                    }
+                </ol>
+            }
+        </nav>
+
+        <article class="page" @ref="_page">
+            @if (_error is not null)
+            {
+                <p class="error" role="alert">@_error</p>
+            }
+            @((MarkupString)_html)
+        </article>
+
+        <footer class="reader-bar">
+            <button @onclick="CloseBook">Library</button>
+            <button class="contents-toggle" @onclick="() => _showContents = !_showContents">Contents</button>
+            <span class="chapter-title">@session.CurrentChapter?.DisplayTitle</span>
+            <button class="previous" @onclick="() => GoTo(session.Position.ChapterIndex - 1)" disabled="@(!session.HasPreviousChapter)">Previous</button>
+            <button @onclick="() => GoTo(session.Position.ChapterIndex + 1)" disabled="@(!session.HasNextChapter)">Next</button>
+        </footer>
+    </div>
+}
+
+@code {
+    private ElementReference _page;
+    private string _html = "";
+    private string? _error;
+    private bool _showContents;
+    private (double Progress, string? Fragment)? _pendingScroll;
+    private DotNetObjectReference<ReaderPage>? _self;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _attachment;
+
+    protected override void OnInitialized()
+    {
+        if (Reader.Session is not { } session)
+            return;
+
+        LoadChapter();
+        _pendingScroll = (session.Position.ChapterProgress, null);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Reader.Session is null)
+            return;
+
+        if (_module is null)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Imbas.UI/reader.js");
+            _self = DotNetObjectReference.Create(this);
+            _attachment = await _module.InvokeAsync<IJSObjectReference>("attach", _page, _self);
+        }
+
+        if (_pendingScroll is { } scroll)
+        {
+            _pendingScroll = null;
+            await _module.InvokeVoidAsync("scrollTo", _page, scroll.Progress, scroll.Fragment);
+        }
+    }
+
+    [JSInvokable]
+    public void OnScrolled(double progress) => Reader.Session?.UpdateProgress(progress);
+
+    [JSInvokable]
+    public void OnLinkClicked(int chapterIndex, string? fragment)
+    {
+        GoTo(chapterIndex, fragment);
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_attachment is not null)
+                await _attachment.InvokeVoidAsync("dispose");
+            if (_attachment is not null)
+                await _attachment.DisposeAsync();
+            if (_module is not null)
+                await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The web view is already gone, taking the listeners with it.
+        }
+
+        _self?.Dispose();
+    }
+
+    private RenderFragment TocList(IReadOnlyList<TocEntry> entries) =>
+        @<ol class="toc">
+            @foreach (var entry in entries)
+            {
+                <li>
+                    @if (entry.ChapterIndex is { } index)
+                    {
+                        @TocLink(entry.Title, index, entry.Fragment)
+                    }
+                    else
+                    {
+                        <span class="toc-heading">@entry.Title</span>
+                    }
+                    @if (entry.Children.Count > 0)
+                    {
+                        @TocList(entry.Children)
+                    }
+                </li>
+            }
+        </ol>;
+
+    private RenderFragment TocLink(string title, int chapterIndex, string? fragment) =>
+        @<button class="toc-link @(IsCurrent(chapterIndex, fragment) ? "current" : "")"
+                 @onclick="() => GoTo(chapterIndex, fragment)">@title</button>;
+
+    // Highlight the first link to the current chapter, not every section within it.
+    private bool IsCurrent(int chapterIndex, string? fragment) =>
+        Reader.Session?.Position.ChapterIndex == chapterIndex && fragment is null;
+
+    private void GoTo(int chapterIndex, string? fragment = null)
+    {
+        if (Reader.Session is not { } session || chapterIndex < 0 || chapterIndex >= session.Book.Chapters.Count)
+            return;
+
+        _showContents = false;
+        if (chapterIndex != session.Position.ChapterIndex)
+        {
+            session.GoToChapter(chapterIndex);
+            LoadChapter();
+        }
+
+        _pendingScroll = (0, fragment);
+    }
+
+    private void LoadChapter()
+    {
+        try
+        {
+            _html = Reader.Session?.ReadCurrentChapterHtml() ?? "";
+            _error = null;
+        }
+        catch (EpubFormatException ex)
+        {
+            _html = "";
+            _error = ex.Message;
+        }
+    }
+
+    private void CloseBook()
+    {
+        Reader.Close();
+        Navigation.NavigateTo("");
+    }
+}

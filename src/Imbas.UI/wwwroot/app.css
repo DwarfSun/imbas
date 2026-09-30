@@ -30,15 +30,200 @@ body {
 }
 
 .books li {
+    border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+}
+
+.books .book {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
     padding: 0.5rem 0;
-    border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
 }
 
 .books .authors {
     font-size: 0.9em;
     opacity: 0.7;
+}
+
+button {
+    font: inherit;
+    padding: 0.35rem 0.8rem;
+    border-radius: 0.4rem;
+    border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+    background: color-mix(in srgb, currentColor 6%, transparent);
+    color: inherit;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+button.primary {
+    background: #512bd4;
+    border-color: #512bd4;
+    color: white;
+}
+
+.error {
+    color: #c62828;
+}
+
+.library-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+/* Reader: contents on the left, the chapter on the right, controls along the bottom. */
+.reader {
+    display: grid;
+    grid-template-columns: minmax(12rem, 18rem) 1fr;
+    grid-template-rows: 1fr auto;
+    grid-template-areas:
+        "contents page"
+        "bar bar";
+    gap: 0.75rem 1.5rem;
+    height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px));
+}
+
+.reader .contents {
+    grid-area: contents;
+    overflow-y: auto;
+    border-inline-end: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+    padding-inline-end: 0.75rem;
+}
+
+.reader .contents h1 {
+    font-size: 1.15rem;
+    margin: 0 0 0.25rem;
+}
+
+.reader .contents .authors {
+    margin: 0 0 1rem;
+    opacity: 0.7;
+}
+
+.toc {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.toc .toc {
+    padding-inline-start: 1rem;
+}
+
+.toc-link,
+.toc-heading {
+    display: block;
+    width: 100%;
+    padding: 0.3rem 0.5rem;
+    text-align: start;
+    border: none;
+    border-radius: 0.3rem;
+    background: none;
+}
+
+.toc-heading {
+    opacity: 0.7;
+}
+
+.toc-link.current {
+    background: color-mix(in srgb, #512bd4 20%, transparent);
+}
+
+.reader .page {
+    grid-area: page;
+    overflow-y: auto;
+    padding: 0 1rem;
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    font-size: 1.15rem;
+    line-height: 1.6;
+}
+
+.reader .page > * {
+    max-width: 40rem;
+    margin-inline: auto;
+}
+
+.reader .page img,
+.reader .page svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.reader-bar {
+    grid-area: bar;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.reader-bar .chapter-title {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    opacity: 0.7;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.reader-bar .contents-toggle {
+    display: none;
+}
+
+/* On narrow screens the contents become an overlay opened from the bottom bar. */
+@media (max-width: 700px) {
+    .reader {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "page"
+            "bar";
+    }
+
+    .reader .contents {
+        display: none;
+    }
+
+    .reader.contents-open .contents {
+        display: block;
+        grid-area: page;
+        position: relative;
+        z-index: 1;
+        background: Canvas;
+        border: none;
+    }
+
+    .reader-bar .contents-toggle {
+        display: inline-block;
+    }
+
+    .reader-bar {
+        gap: 0.35rem;
+    }
+
+    .reader-bar button {
+        padding: 0.35rem 0.6rem;
+    }
+
+    .reader-bar .chapter-title {
+        display: none;
+    }
+
+    .reader-bar .previous {
+        margin-inline-start: auto;
+    }
 }
 
 #blazor-error-ui {
