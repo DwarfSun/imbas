@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Imbas.App/Imbas.App.csproj" />
+    <Project Path="src/Imbas.Core/Imbas.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Imbas.Core.Tests/Imbas.Core.Tests.csproj" />
+  </Folder>
+</Solution>
