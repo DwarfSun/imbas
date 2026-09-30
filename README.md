@@ -3,7 +3,7 @@ Open source, cross-platform e-reader
 
 ## Layout
 
-- `src/Imbas.Core` — the book model, library and reading position, with no UI dependencies.
+- `src/Imbas.Core` — the book model, library, EPUB reader and saved reading positions, with no UI dependencies.
 - `src/Imbas.UI` — the Blazor components that make up the interface, shared by every host.
 - `src/Imbas.Maui` — the .NET MAUI Blazor Hybrid app for Windows, macOS, iOS and Android.
 - `src/Imbas.Linux` — a [Photino](https://www.tryphotino.io/) host for Linux, since MAUI's BlazorWebView doesn't run there.

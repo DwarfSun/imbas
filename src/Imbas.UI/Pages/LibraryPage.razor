@@ -1,11 +1,22 @@
 @page "/"
 @inject Library Library
+@inject ReaderService Reader
+@inject IBookPicker Picker
+@inject NavigationManager Navigation
 
-<h1>Library</h1>
+<header class="library-header">
+    <h1>Library</h1>
+    <button class="primary" @onclick="PickBookAsync" disabled="@_picking">Open book…</button>
+</header>
+
+@if (Reader.Error is { } error)
+{
+    <p class="error" role="alert">@error</p>
+}
 
 @if (Library.Count == 0)
 {
-    <p class="empty">Your library is empty.</p>
+    <p class="empty">Your library is empty. Open an EPUB to start reading.</p>
 }
 else
 {
@@ -13,12 +24,44 @@ else
         @foreach (var book in Library.Books.OrderBy(b => b.Title, StringComparer.CurrentCultureIgnoreCase))
         {
             <li>
-                <span class="title">@book.Title</span>
-                @if (book.Authors.Count > 0)
-                {
-                    <span class="authors">@string.Join(", ", book.Authors)</span>
-                }
+                <button class="book" @onclick="() => OpenBook(book.FilePath, import: false)">
+                    <span class="title">@book.Title</span>
+                    @if (book.Authors.Count > 0)
+                    {
+                        <span class="authors">@string.Join(", ", book.Authors)</span>
+                    }
+                </button>
             </li>
         }
     </ul>
+}
+
+@code {
+    private bool _picking;
+
+    protected override void OnInitialized()
+    {
+        if (Reader.TryRestoreLastBook())
+            Navigation.NavigateTo("read");
+    }
+
+    private async Task PickBookAsync()
+    {
+        _picking = true;
+        try
+        {
+            if (await Picker.PickBookAsync() is { } path)
+                OpenBook(path, import: true);
+        }
+        finally
+        {
+            _picking = false;
+        }
+    }
+
+    private void OpenBook(string path, bool import)
+    {
+        if (Reader.Open(path, import))
+            Navigation.NavigateTo("read");
+    }
 }

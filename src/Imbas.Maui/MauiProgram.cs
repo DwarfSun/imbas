@@ -1,4 +1,5 @@
-using Imbas.Core;
+using Imbas.UI;
+using Imbas.UI.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Imbas.Maui;
@@ -16,7 +17,8 @@ public static class MauiProgram
 			});
 
 		builder.Services.AddMauiBlazorWebView();
-		builder.Services.AddSingleton<Library>();
+		builder.Services.AddImbasUI(FileSystem.AppDataDirectory);
+		builder.Services.AddSingleton<IBookPicker, MauiBookPicker>();
 
 #if DEBUG
 		builder.Services.AddBlazorWebViewDeveloperTools();
