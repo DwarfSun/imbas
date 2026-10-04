@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Imbas.Core/Imbas.Core.csproj" />
+    <Project Path="src/Imbas.Linux/Imbas.Linux.csproj" />
+    <Project Path="src/Imbas.Maui/Imbas.Maui.csproj" />
+    <Project Path="src/Imbas.UI/Imbas.UI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Imbas.Core.Tests/Imbas.Core.Tests.csproj" />
+  </Folder>
+</Solution>
